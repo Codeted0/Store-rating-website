@@ -11,7 +11,7 @@ export default function Home() {
         {/* Normal User */}
         <button
           className="bg-green-500 text-white p-4 rounded hover:bg-green-600 transition w-64"
-          onClick={() => navigate("/signup")}
+          onClick={() => navigate("/login")}
         >
           Get Started as User
         </button>
