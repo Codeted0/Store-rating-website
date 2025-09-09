@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axiosInstance from "../api/axios.js";
 
 export default function AddNewModal({ onClose, onSubmit }) {
   const [type, setType] = useState("user"); // default tab
+  const [owners, setOwners] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,14 +23,17 @@ export default function AddNewModal({ onClose, onSubmit }) {
   // };
   const handleSubmit = async () => {
     try {
-      // Add role based on type (user/admin/owner)
-      const payload = { ...formData, role: type };
-
       if (type === "store") {
-        // stores are separate
-        await axiosInstance.post("/stores", formData);
+        const payload = {
+          name: formData.name,
+          email: formData.email,
+          address: formData.address,
+          ownerId: parseInt(formData.owner), // 👈 fix here
+        };
+
+        await axiosInstance.post("/stores", payload);
       } else {
-        // all users go to /users with role
+        const payload = { ...formData, role: type };
         await axiosInstance.post("/users", payload);
       }
 
@@ -54,6 +58,18 @@ export default function AddNewModal({ onClose, onSubmit }) {
       alert("Failed to add " + type + ": " + message);
     }
   };
+
+  useEffect(() => {
+    const fetchOwners = async () => {
+      try {
+        const res = await axiosInstance.get("/users/role/owners");
+        setOwners(res.data);
+      } catch (err) {
+        console.error("Failed to fetch owners:", err);
+      }
+    };
+    fetchOwners();
+  }, []);
 
   return (
     <div
@@ -143,14 +159,21 @@ export default function AddNewModal({ onClose, onSubmit }) {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border rounded"
               />
-              <input
-                type="text"
+              <select
                 name="owner"
-                placeholder="Owner ID or Name"
                 value={formData.owner}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, owner: e.target.value })
+                }
                 className="w-full px-3 py-2 border rounded"
-              />
+              >
+                <option value="">Select Owner</option>
+                {owners.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
             </>
           )}
         </div>
