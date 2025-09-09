@@ -20,6 +20,18 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// Get all owners only
+export const getOwners = async (req, res) => {
+  try {
+    const owners = await prisma.user.findMany({
+      where: { role: "owner" },
+      select: { id: true, name: true }, // only what you need
+    });
+    res.json(owners);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 // Get a single user by ID
 export const getUserById = async (req, res) => {
@@ -125,3 +137,28 @@ export const searchUsers = async (req, res) => {
   }
 };
 
+export const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: Number(req.user.id) }, // make sure it's an integer
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        stores: true,
+        ratings: true,
+      },
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    console.error("❌ Error fetching current user:", err);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+};

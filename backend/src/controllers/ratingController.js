@@ -1,28 +1,36 @@
-import { PrismaClient } from '../../generated/prisma/index.js';
+import { PrismaClient } from "../../generated/prisma/index.js";
 const prisma = new PrismaClient();
 
-// Normal User: submit or update rating
+// Submit rating
 export const submitRating = async (req, res) => {
   const userId = req.user.id;
-  const { storeId, ratingValue } = req.body;
+  const { storeId } = req.params;
+  const { rating } = req.body;
 
-  if (ratingValue < 1 || ratingValue > 5)
-    return res.status(400).json({ message: 'Rating must be 1–5' });
+  if (!rating || rating < 1 || rating > 5)
+    return res.status(400).json({ message: "Invalid rating" });
 
   try {
-    const rating = await prisma.rating.upsert({
-      where: { userId_storeId: { userId, storeId } },
-      update: { ratingValue },
-      create: { userId, storeId, ratingValue },
+    const newRating = await prisma.rating.upsert({
+      where: { userId_storeId: { userId, storeId: Number(storeId) } },
+      create: { userId, storeId: Number(storeId), ratingValue: rating },
+      update: { ratingValue: rating },
     });
 
-    // Update store avgRating
-    const allRatings = await prisma.rating.findMany({ where: { storeId } });
-    const avg = allRatings.reduce((a, r) => a + r.ratingValue, 0) / allRatings.length;
-    await prisma.store.update({ where: { id: storeId }, data: { avgRating: avg } });
+    const stats = await prisma.rating.aggregate({
+      _avg: { ratingValue: true },
+      _count: { ratingValue: true },
+      where: { storeId: Number(storeId) },
+    });
 
-    res.json({ message: 'Rating submitted', rating });
+    res.json({
+      avgRating: stats._avg.ratingValue
+        ? Number(stats._avg.ratingValue.toFixed(1))
+        : 0,
+      totalRatings: stats._count.ratingValue,
+      userRating: newRating.ratingValue,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };

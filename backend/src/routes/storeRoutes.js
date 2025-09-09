@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Admin routes
 // Store Owner can create their store
-router.post('/', authMiddleware, roleCheck('owner'), addStore);
+router.post('/', authMiddleware, roleCheck('admin'), addStore);
 
 
 // All users can get store list

@@ -6,17 +6,21 @@ import {
   createUser,
   searchUsers,
   resetUserPassword, 
+  getOwners,
 } from '../controllers/userController.js';
 import { register } from '../controllers/authController.js'; // ✅ import register
 import { validateUserData } from '../middleware/validateUserData.js';
 
 import { authMiddleware } from '../middleware/auth.js';
 import { roleCheck } from '../middleware/roleCheck.js';
+import { getCurrentUser } from '../controllers/userController.js';
 
 const router = express.Router();
 
 // Admin can get all users
 router.get('/', authMiddleware, roleCheck('admin'), getAllUsers);
+
+router.get("/role/owners", getOwners);
 
 // Admin can search/filter users
 router.get('/search', authMiddleware, roleCheck('admin'), searchUsers);
@@ -35,5 +39,7 @@ router.post('/register', validateUserData, register);
 
 // Admin reset user password
 router.put('/reset-password/:id', authMiddleware, roleCheck('admin'), resetUserPassword);
+
+router.get('/me', authMiddleware, getCurrentUser);
 
 export default router;

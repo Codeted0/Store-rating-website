@@ -6,6 +6,10 @@ import { submitRating } from '../controllers/ratingController.js';
 const router = express.Router();
 
 // Normal user submit or update rating
-router.post('/', authMiddleware, roleCheck('user'), submitRating);
+// ratingRoutes.js
+// ratingRoutes.js
+router.post('/:storeId', authMiddleware, roleCheck('user'), submitRating);
+
+
 
 export default router;
