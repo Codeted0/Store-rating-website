@@ -21,19 +21,33 @@ export default function UserDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch stores from backend
-  useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        const response = await axios.get("/stores");
-        setStores(response.data);
-      } catch (err) {
-        console.error(err);
+useEffect(() => {
+  const fetchStores = async () => {
+    try {
+      const token = localStorage.getItem("token"); // ✅ get token
+      const response = await axios.get("/stores", {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ send token
+        },
+      });
+      setStores(response.data);
+    } catch (err) {
+      console.error(err);
+      if (err.response?.status === 401) {
+        alert("Session expired, please login again");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        window.location.href = "/home"; // 🚀 redirect to login
+      } else {
         alert("Failed to fetch stores");
       }
-    };
-    fetchStores();
-  }, []);
+    }
+  };
+  fetchStores();
+}, []);
 
+
+  
   const openRatingModal = (store) => {
     setSelectedStore(store);
     setTempRating(store.userRating || 0);

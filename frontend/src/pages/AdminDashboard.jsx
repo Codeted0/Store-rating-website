@@ -16,6 +16,7 @@ import {
 // import AddUserModal from "../components/AddNewModal";
 import AddNewModal from "../components/AddNewModal";
 // import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -27,6 +28,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const navigate = useNavigate();
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -41,32 +43,65 @@ export default function AdminDashboard() {
     address: "",
     owner: "",
   });
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("./home")
+    // return (
+    //   <div className="text-center mt-20 text-xl">Redirecting to home...</div>
+    // );
+  }
 
+      // ✅ Token check and redirect
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [usersRes, storesRes] = await Promise.all([
-          axios.get("/users"),
-          axios.get("/stores"),
-        ]);
-        setUsers(usersRes.data);
-        setStores(storesRes.data);
+  const token = localStorage.getItem("token");
 
-        // Optional: calculate total ratings from stores if API provides ratings
-        const totalRatings = storesRes.data.reduce(
-          (acc, store) => acc + (store.rating || 0),
-          0
-        );
-        setRatings(totalRatings);
-      } catch (err) {
-        console.error(err);
+  // if (!token) {
+  //   // If no token, redirect immediately
+  //   navigate("/home", { replace: true });
+  //   return;
+  // }
+
+  const fetchAdminData = async () => {
+    try {
+      // Fetch users and stores in parallel
+      const [usersRes, storesRes] = await Promise.all([
+        axios.get("/users", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("/stores", { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      // Set state
+      setUsers(usersRes.data);
+      setStores(storesRes.data);
+
+      // Calculate total ratings (like OwnerDashboard average)
+      const totalRatings = storesRes.data.reduce((acc, store) => {
+        const storeRating = store.ratings?.length
+          ? store.ratings.reduce((a, r) => a + r.ratingValue, 0) /
+            store.ratings.length
+          : 0;
+        return acc + storeRating;
+      }, 0);
+
+      setRatings(totalRatings);
+
+    } catch (err) {
+      console.error(err);
+
+      if (err.response?.status === 401) {
+        alert("Session expired, please login again");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        navigate("/home", { replace: true });
+      } else {
         alert("Failed to fetch data from server");
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchData();
-  }, []);
+    } finally {
+      setLoading(false); // ✅ stop loader
+    }
+  };
+
+  fetchAdminData();
+}, [navigate]);
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =

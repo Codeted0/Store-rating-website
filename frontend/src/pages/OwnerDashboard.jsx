@@ -14,7 +14,7 @@ export default function OwnerDashboard() {
     const fetchStore = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("/owner/store", {
+        const response = await axios.get("/owner/stores", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -42,11 +42,18 @@ export default function OwnerDashboard() {
           })),
         });
       } catch (err) {
-        console.error(err);
-        alert("Failed to fetch your store");
-      } finally {
-        setLoading(false);
+      console.error(err);
+      if (err.response?.status === 401) {
+        alert("Session expired, please login again");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        window.location.href = "/home"; // 🚀 redirect to login
+      } else {
+        alert("Failed to fetch stores");
       }
+    }finally {
+      setLoading(false); // ✅ make sure loading is stopped
+    }
     };
 
     fetchStore();
