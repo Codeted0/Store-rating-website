@@ -51,15 +51,9 @@ export default function AdminDashboard() {
     // );
   }
 
-      // ✅ Token check and redirect
+    
   useEffect(() => {
   const token = localStorage.getItem("token");
-
-  // if (!token) {
-  //   // If no token, redirect immediately
-  //   navigate("/home", { replace: true });
-  //   return;
-  // }
 
   const fetchAdminData = async () => {
     try {
